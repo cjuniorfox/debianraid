@@ -130,3 +130,12 @@ iptables-restore < /etc/iptables/rules.v4
 ```
 5. You should have internet connection at that time, let's reboot the server and see if everything still working as should be.
 
+## Bonus. Put the DVD Reader to act as auto CD Player when some CD it's inserterd.
+
+If your unit had a working DVD reader installed and you have some good speakers laying around, with a little scripting, you can make the Macmini play audio CDs automatically when some CD it's inserted to the sytem.
+
+1. Let's install the whole needed to make that happen
+```
+apt install mplayer pulseaudio alsa-utils
+```
+2. To make the CD play automatically, we need to trigger a device event. The correct tool to manage that on linux it's called *udevadm*. So, you think it's just make a very little script to play the CD when the disk it's inserted and it's done. But wasn't. The device driven event trigger was not made to a such long process, like reproducing a full lenght CD audio. If you do so, the event trigger will kill the process after while and the CD just stops playing after a couple minutes. The best way to address that, it's creating a service event a
