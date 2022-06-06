@@ -1,4 +1,4 @@
-# Macmini as router with PPPoE server and using virtual network interface (VLAN)
+# Macmini as router with PPPoE and using virtual network interface (VLAN)
 
 1. Maybe you would need to install the network device driver first. Find some way to download the file and install it manually at your Macmini server.
 
