@@ -13,7 +13,7 @@ wget http://ftp.br.debian.org/debian/pool/non-free/b/broadcom-sta/broadcom-sta-d
 apt install vlan && echo 8021q >> /etc/modules && modprobe 8021q
 ```
 
-## Making the server getting online
+## Getting online
 
 1. Setup your PPPOE connection, you can use your VLAN if you wish to. Do not forget to check the networking interface name ifname. At that example, the name it's **enp4s0f0**, but can be another name, depending of your setup. At mine, I'm using a manageable switch and using VLAN with ID 1.
 ```
