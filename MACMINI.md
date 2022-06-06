@@ -134,8 +134,40 @@ iptables-restore < /etc/iptables/rules.v4
 
 If your unit had a working DVD reader installed and you have some good speakers laying around, with a little scripting, you can make the Macmini play audio CDs automatically when some CD it's inserted to the sytem.
 
-1. Let's install the whole needed to make that happen
+Let's install the whole needed to make that happen
 ```
 apt install mplayer pulseaudio alsa-utils
 ```
-2. To make the CD play automatically, we need to trigger a device event. The correct tool to manage that on linux it's called *udevadm*. So, you think it's just make a very little script to play the CD when the disk it's inserted and it's done. But wasn't. The device driven event trigger was not made to a such long process, like reproducing a full lenght CD audio. If you do so, the event trigger will kill the process after while and the CD just stops playing after a couple minutes. The best way to address that, it's creating a service event a
+To make the CD play automatically, we need to trigger a device event. The correct tool to manage that on linux it's called *udevadm*. So, you think it's just make a very little script to play the CD when the disk it's inserted and it's done. But wasn't. The device driven event trigger was not made to a such long process, like reproducing a full lenght CD audio. If you do so, the event trigger will kill the process after while and the CD just stops playing after a couple minutes. The best way to address that, it's creating a systemd service and triggering at the device event. The full lenght disc will play and you will being able the check the status of the event and even kill it, if some some reason you with so.
+
+
+1. Create a script to reproduce the CD. That it's in any means a fancy one. It's just starts to play the CD and eject it when it's done.
+```
+cat << EOF > /usr/local/bin/playcd
+#!/bin/bash
+blockdev --getsize64 /dev/sr0 #It's just to bring the device online before reproducing
+mplayer cdda:// -cache 2000 #Caching to prevent audio dropping
+eject /dev/sr0
+EOF
+chmod +x /usr/local/bin/playcd
+```
+2. Create a systemd service commanding to run the script we just created
+```
+cat << EOF > /etc/systemd/system/playcd.service
+[Unit]
+Description=Auto play CDs when inserted
+
+[Service]
+ExecStart=/usr/local/bin/playcd
+EOF
+chmod +x /etc/systemd/system/playcd.service
+```
+
+3. Let's create the device trigger event to initiate the service we just created.
+```
+cat << EOF > /etc/udev/rules.d/playcd.rules
+KERNEL=="sr0", ENV{SYSTEMD_WANTS}+="playcd.service"
+EOF
+```
+
+Now, just put a CD and the MacMini will start playing the CD over the output jack.
