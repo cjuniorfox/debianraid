@@ -1,21 +1,38 @@
 # Macmini as router with PPPoE and using virtual network interface (VLAN)
 
-1. Find and install missing firmware files.
+First, we need to install the missing firmware files.
 
 ```
 apt install isenkram-cli
 sudo isenkram-autoinstall-firmware
 ```
-2. If you want to install ssh or any desktop environment, run **tasksel**.
+If you want to install ssh or any desktop environment, run **tasksel**.
 
-3. If your device has only one Network adapter, but you have a manageable switch (can be any manageable switch or some router with OpenWRT installed. Mine it's a TP-Link Archer C7 with works great), Install the **VLAN**
+Macmini have only one network adapter. To make it act as a rounter, it needed at least two adapter. An alternative it's using VLAN and manageable switch (can be any manageable switch or some router with OpenWRT installed. Mine it's a TP-Link Archer C7 with works great), Install the **VLAN**
 ```
 apt install vlan && echo 8021q >> /etc/modules && modprobe 8021q
 ```
 
+Create your VLAN adapters
+
+VLAN 1 (LAN)
+```
+cat /etc/network/interfaces.d/lan 
+auto enp4s0f0.1
+iface enp4s0f0.1 inet manual
+EOF
+```
+VLAN 2 (WAN)
+```
+cat /etc/network/interfaces.d/wan 
+auto enp4s0f0.2
+iface enp4s0f0.2 inet manual
+EOF
+```
 ## Getting online
 
-1. Setup your PPPOE connection, you can use your VLAN if you wish to. Do not forget to check the networking interface name ifname. At that example, the name it's **enp4s0f0**, but can be another name, depending of your setup. At mine, I'm using a manageable switch and using VLAN with ID 1.
+It's time to configure the WAN connection using the VLAN adapter we created. At that example, let's configure a PPPoE connection.
+
 ```
 cat << EOF > /etc/ppp/peers/your_provider_name
 plugin rp-pppoe.so enp4s0f0.1
@@ -43,11 +60,11 @@ noipdefault
 defaultroute
 EOF
 ```
-2. Place your username/passoword at file **/etc/ppp/chap-secrets** for wherever reason.
+Place your username/passoword at file **/etc/ppp/pap-secrets** for wherever reason.
 ```
-echo "ppp_username ppp_password" >> /etc/ppp/chap-secrets
+echo "ppp_username * ppp_password" >> /etc/ppp/pap-secrets
 ```
-3. You can test your connection running:
+Let's test if our connection it's up and running.
 ```
 pon your_provider_name
 ```
@@ -55,12 +72,12 @@ To disconnect, just run
 ```
 poff -a
 ```
-4. Configure your **/etc/network/interfaces** file to connect your PPPoE server automatically at bring up.
+Set the **/etc/network/interfaces** file to connect your PPPoE server automatically at bring up.
 ```
-cat << EOF > /etc/network/interfaces.d/pppoe-wan
-auto enp4s0f0.1
-iface enp4s0f0.1 inet manual
-  pre-up /sbin/ip link set dev enp4s0f0.10 up
+cat << EOF > /etc/network/interfaces.d/wan
+auto enp4s0f0.2
+iface enp4s0f0.2 inet ppp
+  pre-up /sbin/ip link set dev enp4s0f0.2 up
   provider your_provider_name
 EOF
 ```
@@ -69,7 +86,7 @@ EOF
 
 We bring the server alive at the internet, but it's isn't a internet router yet. To do it, we need to setup some things, like a DHCP/DNS Server and configure our routing table.
 
-1. Change the IP Address to static. Some manageable switchs accept working with two connections. One tagged and another untagged. I prefer to tagging the both connections. At that setup, we would go to remove the /etc/network/interfaces DHCP client configuration and setup a new file with the specs for our server.
+First, let's disable the IP from general interface and set the VLAN adapter 1 with static IP for the LAN.
 
 ```
 cat << EOF > /etc/network/interfaces
@@ -82,21 +99,18 @@ allow-hotplug enp4s0f0
 EOF
 ```
 
-2. Let's set the LAN connection. At example, the VLAN for LAN it's tagged as 2.
 ```
 cat << EOF > /etc/network/interfaces.d/lan
-iface enp4s0f0.2 inet static
-        address 10.1.1.1
+iface enp4s0f0.1 inet static
+        address 10.1.1.10
         netmask 255.255.255.0
-        broadcast 10.1.1.255
-        network 10.1.1.0
 EOF
 ```
 2. Install and configure the DHCP/DNS server **dnsmasq**
 ```
 apt install dnsmasq
 cat << EOF > /etc/dnsmasq.d/lan.conf
-interface=enp4s0f0.2
+interface=enp4s0f0.1
 listen-address=127.0.0.1
 domain=lan
 dhcp-range=10.1.1.100,10.1.1.150,12h
@@ -104,9 +118,7 @@ EOF
 ```
 3. IPV4 Forwarding
 ```
-cat << EOF > /etc/sysctl.d/sysctl.conf
-net.ipv4.ip_forward=1
-EOF
+sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/g' /etc/sysctl.d/99-sysctl.conf 
 ```
 4. It's **iptables** time. We need to **masquerade** the connection to, effectivally, make our server work as a router. We also need the persist the settings, because if not, after rebooting the server, the masquerade configuration it's losted and you need to setup your iptables settings again. So, let's install **iptables-persistent**, set the rules and make those settings persistents.
 ```
