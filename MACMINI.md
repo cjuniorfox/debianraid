@@ -1,10 +1,10 @@
 # Macmini as router with PPPoE and using virtual network interface (VLAN)
 
-1. Maybe you would need to install the network device driver first. Find some way to download the file and install it manually at your Macmini server.
+1. Find and install missing firmware files.
 
-[broadcom-sta-dkms_6.30.223.271-19_all.deb](http://ftp.br.debian.org/debian/pool/non-free/b/broadcom-sta/broadcom-sta-dkms_6.30.223.271-19_all.deb).
 ```
-wget http://ftp.br.debian.org/debian/pool/non-free/b/broadcom-sta/broadcom-sta-dkms_6.30.223.271-19_all.deb && apt install ./broadcom-sta-dkms_6.30.223.271-19_all.deb
+apt install isenkram-cli
+sudo isenkram-autoinstall-firmware
 ```
 2. If you want to install ssh or any desktop environment, run **tasksel**.
 
