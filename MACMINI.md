@@ -105,6 +105,8 @@ cat << EOF > /etc/network/interfaces.d/lan
 iface enp4s0f0.1 inet static
         address 10.1.1.10
         netmask 255.255.255.0
+        network 10.1.1.0
+        broadcast 10.1.1.255
 EOF
 ```
 2. Install and configure the DHCP/DNS server **dnsmasq**
