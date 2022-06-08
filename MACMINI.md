@@ -17,14 +17,14 @@ Create your VLAN adapters
 
 VLAN 1 (LAN)
 ```
-cat /etc/network/interfaces.d/lan 
+cat << EOF > /etc/network/interfaces.d/lan 
 auto enp4s0f0.1
 iface enp4s0f0.1 inet manual
 EOF
 ```
 VLAN 2 (WAN)
 ```
-cat /etc/network/interfaces.d/wan 
+cat << EOF > /etc/network/interfaces.d/wan 
 auto enp4s0f0.2
 iface enp4s0f0.2 inet manual
 EOF
