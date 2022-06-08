@@ -102,6 +102,7 @@ EOF
 
 ```
 cat << EOF > /etc/network/interfaces.d/lan
+auto enp4s0f0.1
 iface enp4s0f0.1 inet static
         address 10.1.1.10
         netmask 255.255.255.0
