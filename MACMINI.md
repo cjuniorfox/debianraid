@@ -4,7 +4,7 @@ First, we need to install the missing firmware files.
 
 ```
 apt install isenkram-cli
-sudo isenkram-autoinstall-firmware
+isenkram-autoinstall-firmware
 ```
 If you want to install ssh or any desktop environment, run **tasksel**.
 
