@@ -34,6 +34,7 @@ EOF
 It's time to configure the WAN connection using the VLAN adapter we created. At that example, let's configure a PPPoE connection.
 
 ```
+apt install ppp
 cat << EOF > /etc/ppp/peers/your_provider_name
 plugin rp-pppoe.so enp4s0f0.1
 
