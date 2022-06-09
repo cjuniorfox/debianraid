@@ -17,16 +17,23 @@ Create your VLAN adapters
 
 VLAN 1 (LAN)
 ```
-cat << EOF > /etc/network/interfaces.d/lan 
-auto enp4s0f0.1
-iface enp4s0f0.1 inet manual
+cat << EOF > /etc/network/interfaces.d/lan
+auto vlan1
+iface vlan1 inet static
+        address 10.1.1.10
+        netmask 255.255.255.0
+        network 10.1.1.0
+        broadcast 10.1.1.255
+        vlan_raw_device enp4s0f0
 EOF
 ```
+
 VLAN 2 (WAN)
 ```
 cat << EOF > /etc/network/interfaces.d/wan 
-auto enp4s0f0.2
-iface enp4s0f0.2 inet manual
+auto vlan2
+iface vlan2 inet manual
+vlan_raw_device enp4s0f0
 EOF
 ```
 ## Getting online
@@ -36,7 +43,7 @@ It's time to configure the WAN connection using the VLAN adapter we created. At 
 ```
 apt install ppp
 cat << EOF > /etc/ppp/peers/your_provider_name
-plugin rp-pppoe.so enp4s0f0.2
+plugin rp-pppoe.so vlan2
 
 user "ppp_username"
 noauth
@@ -76,55 +83,33 @@ poff -a
 Set the **/etc/network/interfaces** file to connect your PPPoE server automatically at bring up.
 ```
 cat << EOF > /etc/network/interfaces.d/wan
-auto enp4s0f0.2
-iface enp4s0f0.2 inet ppp
+auto auto vlan2
+iface vlan2 inet ppp
   pre-up /sbin/ip link set dev enp4s0f0.2 up
   provider your_provider_name
+vlan_raw_device enp4s0f0
 EOF
 ```
 
 ## Let's make our server the internet router
 
-We bring the server alive at the internet, but it's isn't a internet router yet. To do it, we need to setup some things, like a DHCP/DNS Server and configure our routing table.
+We bring our server alive at the internet, but it's isn't a internet router yet. To do it, we need to setup some things, like a DHCP/DNS Server and configure our routing table.
 
-First, let's disable the IP from general interface and set the VLAN adapter 1 with static IP for the LAN.
-
-```
-cat << EOF > /etc/network/interfaces
-# The loopback network interface
-auto lo
-iface lo inet loopback
-
-# The primary network interface
-allow-hotplug enp4s0f0
-EOF
-```
-
-```
-cat << EOF > /etc/network/interfaces.d/lan
-auto enp4s0f0.1
-iface enp4s0f0.1 inet static
-        address 10.1.1.10
-        netmask 255.255.255.0
-        network 10.1.1.0
-        broadcast 10.1.1.255
-EOF
-```
-2. Install and configure the DHCP/DNS server **dnsmasq**
+1. Install and configure the DHCP/DNS server **dnsmasq**
 ```
 apt install dnsmasq
 cat << EOF > /etc/dnsmasq.d/lan.conf
-interface=enp4s0f0.1
+interface=vlan1
 listen-address=127.0.0.1
 domain=lan
 dhcp-range=10.1.1.100,10.1.1.150,12h
 EOF
 ```
-3. IPV4 Forwarding
+2. IPV4 Forwarding
 ```
 sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/g' /etc/sysctl.d/99-sysctl.conf 
 ```
-4. It's **iptables** time. We need to **masquerade** the connection to, effectivally, make our server work as a router. We also need the persist the settings, because if not, after rebooting the server, the masquerade configuration it's losted and you need to setup your iptables settings again. So, let's install **iptables-persistent**, set the rules and make those settings persistents.
+3. It's **iptables** time. We need to **masquerade** the connection to, effectivally, make our server work as a router. We also need the persist the settings, because if not, after rebooting the server, the masquerade configuration it's losted and you need to setup your iptables settings again. So, let's install **iptables-persistent**, set the rules and make those settings persistents.
 ```
 apt install iptables-persistent
 cat << EOF > /etc/iptables/rules.v4
@@ -144,7 +129,7 @@ COMMIT
 EOF
 iptables-restore < /etc/iptables/rules.v4
 ```
-5. You should have internet connection at that time, let's reboot the server and see if everything still working as should be.
+4. You should have internet connection at that time, let's reboot the server and see if everything still working as should be.
 
 ## Bonus. Put the DVD Reader to act as auto CD Player when some CD it's inserterd.
 
