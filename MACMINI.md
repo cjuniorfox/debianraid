@@ -33,6 +33,7 @@ VLAN 2 (WAN)
 cat << EOF > /etc/network/interfaces.d/wan 
 auto vlan2
 iface vlan2 inet manual
+pre-up /sbin/ip link set dev vlan2 up
 vlan_raw_device enp4s0f0
 EOF
 ```
@@ -82,11 +83,10 @@ poff -a
 ```
 Set the **/etc/network/interfaces** file to connect your PPPoE server automatically at bring up.
 ```
-cat << EOF > /etc/network/interfaces.d/wan
-auto auto vlan2
+cat << EOF > /etc/network/interfaces.d/wan 
+auto vlan2
 iface vlan2 inet ppp
-  pre-up /sbin/ip link set dev vlan2 up
-  provider your_provider_name
+provider your_provider_name
 vlan_raw_device enp4s0f0
 EOF
 ```
