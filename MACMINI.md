@@ -20,21 +20,21 @@ VLAN 1 (LAN)
 cat << EOF > /etc/network/interfaces.d/lan
 auto vlan1
 iface vlan1 inet static
+        mtu 1598
         address 10.1.1.10
         netmask 255.255.255.0
         network 10.1.1.0
         broadcast 10.1.1.255
-        vlan_raw_device enp4s0f0
+	vlan_raw_device enp4s0f0
 EOF
 ```
 
 VLAN 2 (WAN)
 ```
 cat << EOF > /etc/network/interfaces.d/wan 
-auto vlan2
-iface vlan2 inet manual
-pre-up /sbin/ip link set dev vlan2 up
-vlan_raw_device enp4s0f0
+auto enp4s0f0.2
+iface enp4s0f0.2 inet manual
+pre-up /sbin/ip link set dev enp4s0f0.2 up
 EOF
 ```
 ## Getting online
@@ -44,7 +44,7 @@ It's time to configure the WAN connection using the VLAN adapter we created. At 
 ```
 apt install ppp
 cat << EOF > /etc/ppp/peers/your_provider_name
-plugin rp-pppoe.so vlan2
+plugin rp-pppoe.so enp4s0f0.2
 
 user "ppp_username"
 noauth
@@ -53,16 +53,11 @@ hide-password
 # Connection settings.
 persist
 maxfail 0
-holdoff 5
-
-# LCP settings.
-lcp-echo-interval 10
-lcp-echo-failure 3
+holdoff 20
 
 # PPPoE compliant settings.
 noaccomp
 default-asyncmap
-mtu 1492
 
 # IP settings.
 noipdefault
@@ -84,10 +79,10 @@ poff -a
 Set the **/etc/network/interfaces** file to connect your PPPoE server automatically at bring up.
 ```
 cat << EOF > /etc/network/interfaces.d/wan 
-auto vlan2
-iface vlan2 inet ppp
-provider your_provider_name
-vlan_raw_device enp4s0f0
+auto enp4s0f0.2
+iface enp4s0f0.2 inet ppp
+       pre-up ip link set dev enp4s0f0.2 up
+       provider frionline
 EOF
 ```
 
