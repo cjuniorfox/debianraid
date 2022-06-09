@@ -10,22 +10,29 @@ If you want to install ssh or any desktop environment, run **tasksel**.
 
 Macmini have only one network adapter. To make it act as a rounter, it needed at least two adapter. An alternative it's using VLAN and manageable switch (can be any manageable switch or some router with OpenWRT installed. Mine it's a TP-Link Archer C7 with works great), Install the **VLAN**
 ```
-apt install vlan && echo 8021q >> /etc/modules && modprobe 8021q
+apt install vlan bridge-utils && echo 8021q >> /etc/modules && modprobe 8021q
 ```
 
-Create your VLAN adapters
+Create your VLAN adapters and bridge interface
 
 VLAN 1 (LAN)
 ```
 cat << EOF > /etc/network/interfaces.d/lan
 auto vlan1
-iface vlan1 inet static
+iface vlan1 inet manual
+        vlan_raw_device enp4s0f0
+
+auto br0
+iface br0 inet static
+        bridge_ports vlan1
+        bridge_stp off
+        bridge_waitport 0
+        bridge_fp 0
         mtu 1598
         address 10.1.1.10
         netmask 255.255.255.0
         network 10.1.1.0
         broadcast 10.1.1.255
-	vlan_raw_device enp4s0f0
 EOF
 ```
 
@@ -35,6 +42,21 @@ cat << EOF > /etc/network/interfaces.d/wan
 auto enp4s0f0.2
 iface enp4s0f0.2 inet manual
 pre-up /sbin/ip link set dev enp4s0f0.2 up
+EOF
+```
+
+Ensure that you have no network configured at **/etc/network/interfaces**
+
+```
+cat << EOF > /etc/network/interfaces
+# This file describes the network interfaces available on your system
+# and how to activate them. For more information, see interfaces(5).
+
+source /etc/network/interfaces.d/*
+
+# The loopback network interface
+auto lo
+iface lo inet loopback
 EOF
 ```
 ## Getting online
@@ -125,6 +147,7 @@ EOF
 iptables-restore < /etc/iptables/rules.v4
 ```
 4. You should have internet connection at that time, let's reboot the server and see if everything still working as should be.
+
 
 ## Bonus. Put the DVD Reader to act as auto CD Player when some CD it's inserterd.
 
