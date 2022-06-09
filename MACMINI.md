@@ -21,6 +21,7 @@ cat << EOF > /etc/network/interfaces.d/lan
 auto vlan1
 iface vlan1 inet manual
         vlan_raw_device enp4s0f0
+        mtu 1598
 
 auto br0
 iface br0 inet static
@@ -28,7 +29,6 @@ iface br0 inet static
         bridge_stp off
         bridge_waitport 0
         bridge_fp 0
-        mtu 1598
         address 10.1.1.10
         netmask 255.255.255.0
         network 10.1.1.0
