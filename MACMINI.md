@@ -85,7 +85,7 @@ Set the **/etc/network/interfaces** file to connect your PPPoE server automatica
 cat << EOF > /etc/network/interfaces.d/wan
 auto auto vlan2
 iface vlan2 inet ppp
-  pre-up /sbin/ip link set dev enp4s0f0.2 up
+  pre-up /sbin/ip link set dev vlan2 up
   provider your_provider_name
 vlan_raw_device enp4s0f0
 EOF
